@@ -24,6 +24,11 @@
             max-height: 400px;
             overflow-y: auto;
         }
+        .anomaly-alert {
+            color: red;
+            font-weight: bold;
+        }
+
         /* Adjusting the size of the graph */
         #trafficChart {
             height: 250px !important; /* Reduced height */
@@ -33,28 +38,190 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="#">Shadow Net</a>
+          
+            <a class="navbar-brand" href="#">
+                <img src="images\logo2.jpg" alt="Logo" width="30" height="30" class="d-inline-block align-text-top">
+                Shadow Net
+            </a>
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="index.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="analytics.html">Analytics</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Reports</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Settings</a></li>
-                    <li class="nav-item"><a class="nav-link" href="logout.html">logout</a></li>
+                    <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
+                    <li class="nav-item"><a class="nav-link" href="settings.html">Settings</a></li>
+                    <!-- Logout Option -->
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="logout.html">Logout</a>
+                    </li>
                 </ul>
             </div>
-        </div>
+            
     </nav>
 
-    <!-- Main Content of the Dashboard Page -->
     <div class="container mt-4">
         <h1 class="mb-4">Network Traffic Analysis Dashboard</h1>
-        <!-- Your existing dashboard content here -->
+
+        <!-- Start and Stop Buttons -->
+        <div class="mb-4">
+            <button id="startBtn" class="btn btn-success">Start Traffic Analysis</button>
+            <button id="stopBtn" class="btn btn-danger" disabled>Stop Traffic Analysis</button>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Traffic</h5>
+                        <p class="metric-value" id="totalTraffic">0 GB</p>
+                        <p class="text-muted">Last 24 hours</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Active Connections</h5>
+                        <p class="metric-value" id="activeConnections">0</p>
+                        <p class="text-muted">Current</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Anomalies Detected</h5>
+                        <p class="metric-value text-danger" id="anomalies">0</p>
+                        <p class="text-muted">Today</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">AI Confidence</h5>
+                        <p class="metric-value text-success" id="aiConfidence">0%</p>
+                        <p class="text-muted">Average</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Network Traffic Overview</h5>
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Recent Alerts</h5>
+                        <div class="alert-section" id="alertsList">
+                            <!-- Alerts will be dynamically populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">AI Insights</h5>
+                        <div id="aiInsights">
+                            <!-- AI-generated insights will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let trafficInterval;
+        let isTrafficAnalysisRunning = false;
+        let trafficData = [];
+        let timeLabels = [];
+
+        // Sample chart initialization
+        const ctx = document.getElementById('trafficChart').getContext('2d');
+        const trafficChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Network Traffic (GB)',
+                    data: trafficData,
+                    borderColor: '#3498db',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Start Button Click
+        document.getElementById('startBtn').addEventListener('click', function () {
+            isTrafficAnalysisRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+
+            // Start traffic analysis
+            trafficInterval = setInterval(() => {
+                // Generate random traffic data for simulation
+                let newTrafficValue = Math.random() * 100; // Simulated traffic (in GB)
+                let newTimeLabel = `${new Date().getMinutes()}:${new Date().getSeconds()}`;
+
+                // Add new data to the chart
+                if (timeLabels.length >= 24) {
+                    timeLabels.shift(); // Remove the oldest label
+                    trafficData.shift(); // Remove the oldest data point
+                }
+
+                // Add new data to the chart's dataset
+                timeLabels.push(newTimeLabel);
+                trafficData.push(newTrafficValue);
+
+                // Update the chart with the new data
+                trafficChart.update();
+
+                // Update the displayed metrics
+                document.getElementById('totalTraffic').textContent = `${Math.floor(Math.random() * 1000)} GB`;
+                document.getElementById('activeConnections').textContent = Math.floor(Math.random() * 1000);
+                document.getElementById('anomalies').textContent = Math.floor(Math.random() * 10);
+                document.getElementById('aiConfidence').textContent = `${Math.floor(Math.random() * 20 + 80)}%`;
+
+                // Check for anomalies (e.g., random chance for anomaly)
+                if (Math.random() < 0.1) { // 10% chance of detecting an anomaly
+                    const alert = document.createElement('div');
+                    alert.classList.add('alert', 'alert-danger', 'anomaly-alert');
+                    alert.textContent = 'Anomaly Detected: Unusual Traffic Patterns!';
+                    document.getElementById('alertsList').appendChild(alert);
+                }
+            }, 1000); // Update every second
+        });
+
+        // Stop Button Click
+        document.getElementById('stopBtn').addEventListener('click', function () {
+            isTrafficAnalysisRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+
+            // Stop traffic analysis
+            clearInterval(trafficInterval);
+        });
+    </script>
 </body>
 </html>
